@@ -3,7 +3,7 @@ import math
 
 pygame.init()
 win = pygame.display.set_mode((600, 600))
-pygame.display.set_caption("First Game")
+pygame.display.set_caption("Zadanie 2 grafika komputerowa")
 
 # deklarowanie kolorów
 CZERWONY = (255, 0, 0)
@@ -11,8 +11,8 @@ ZIELONY = (0, 255, 0)
 NIEBIESKI = (0, 0, 255)
 BIALI = (255, 255, 255)
 
-def Nar13Kat(color, x=300, y=300, radius=150, scale_x=1, scale_y=1, kat=0, shear_x=0):
-    vertices = []
+def Nar13Kat(color, x=300, y=300, radius=150, scale_x=1, scale_y=1, kat=0, skoss_x=0):
+    wieszcholki = []
     for i in range(13):
         angle = 2 * math.pi * i / 13  
 
@@ -22,14 +22,14 @@ def Nar13Kat(color, x=300, y=300, radius=150, scale_x=1, scale_y=1, kat=0, shear
         rotated_x = local_x * math.cos(kat) - local_y * math.sin(kat)
         rotated_y = local_x * math.sin(kat) + local_y * math.cos(kat)
 
-        rotated_x += shear_x * rotated_y
+        rotated_x += skoss_x * rotated_y
 
         vx = x + rotated_x
         vy = y + rotated_y
 
-        vertices.append((vx, vy))
+        wieszcholki.append((vx, vy))
     
-    pygame.draw.polygon(win, color, vertices)
+    pygame.draw.polygon(win, color, wieszcholki)
  
 
     size = radius // 3
@@ -80,12 +80,12 @@ options = {
     '1': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=50, scale_x=1, scale_y=1),
     '2': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=150, scale_x=1, scale_y=1, kat=math.radians(45)),
     '3': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=100, kat=math.radians(180)),
-    '4': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=150, scale_x=1, scale_y=1, shear_x=0.5),  
+    '4': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=150, scale_x=1, scale_y=1, skoss_x=0.5),  
     '5': lambda: Nar13Kat(NIEBIESKI, x=300, y=100, radius=150, scale_x=1, scale_y=0.5),
-    '6': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=150, scale_x=1, scale_y=1, shear_x=(-0.5), kat=math.radians(90)),
-    '7': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=100, scale_x=-1, scale_y=1, shear_x=0, kat=math.radians(180)),
+    '6': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=150, scale_x=1, scale_y=1, skoss_x=(-0.5), kat=math.radians(90)),
+    '7': lambda: Nar13Kat(NIEBIESKI, x=300, y=300, radius=100, scale_x=-1, scale_y=1, skoss_x=0, kat=math.radians(180)),
     '8': lambda: Nar13Kat(NIEBIESKI, x=300, y=400, radius=150, scale_x=1, scale_y=0.5, kat=math.radians(45)),
-    '9': lambda: Nar13Kat(NIEBIESKI, x=400, y=300, radius=150, scale_x=1, scale_y=1, shear_x=0.5, kat=math.radians(180)),
+    '9': lambda: Nar13Kat(NIEBIESKI, x=400, y=300, radius=150, scale_x=1, scale_y=1, skoss_x=0.5, kat=math.radians(180)),
     '0': lambda: reset()
 }
 
