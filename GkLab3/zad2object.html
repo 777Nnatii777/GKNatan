@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <title>Obiektowa SceneGraph - Animacja</title>
+  </head>
+
+  <body>
+    <canvas id="thecanvas" width="1300" height="600"></canvas>
+
+    <p>
+      <label><input type="checkbox" id="animateCheck" /> Obracaj 13-kąty</label>
+    </p>
+
+    <script>
+      class SceneGraphNode {
+        constructor() {
+          this.fillColor = null;
+          this.strokeColor = null;
+        }
+
+        doDraw(g) {
+          throw "doDraw not implemented in SceneGraphNode";
+        }
+
+        draw(g) {
+          g.save();
+          if (this.fillColor) g.fillStyle = this.fillColor;
+          if (this.strokeColor) g.strokeStyle = this.strokeColor;
+          this.doDraw(g);
+          g.restore();
+        }
+
+        setFillColor(color) {
+          this.fillColor = color;
+          return this;
+        }
+        setStrokeColor(color) {
+          this.strokeColor = color;
+          return this;
+        }
+        setColor(color) {
+          this.fillColor = this.strokeColor = color;
+          return this;
+        }
+      }
+
+      class CompoundObject extends SceneGraphNode {
+        constructor() {
+          super();
+          this.subobjects = [];
+        }
+
+        add(node) {
+          this.subobjects.push(node);
+          return this;
+        }
+
+        doDraw(g) {
+          this.subobjects.forEach((obj) => obj.draw(g));
+        }
+      }
+
+      class TransformedObject extends SceneGraphNode {
+        constructor(object) {
+          super();
+          this.object = object;
+          this.translation = { x: 0, y: 0 };
+          this.rotation = 0;
+        }
+
+        setTranslation(x, y) {
+          this.translation.x = x;
+          this.translation.y = y;
+          return this;
+        }
+
+        setRotation(angle) {
+          this.rotation = angle;
+          return this;
+        }
+
+        doDraw(g) {
+          g.save();
+          g.translate(this.translation.x, this.translation.y);
+          g.rotate((this.rotation * Math.PI) / 180);
+          this.object.draw(g);
+          g.restore();
+        }
+      }
+
+      class PolygonNode extends SceneGraphNode {
+        constructor(sides, radius) {
+          super();
+          this.sides = sides;
+          this.radius = radius;
+          this.rotationAngle = 0;
+        }
+
+        setRotation(angle) {
+          this.rotationAngle = angle;
+        }
+
+        doDraw(g) {
+          let angleStep = (2 * Math.PI) / this.sides;
+          let points = [];
+
+          g.save();
+          g.rotate((this.rotationAngle * Math.PI) / 180);
+
+          g.beginPath();
+          for (let i = 0; i < this.sides; i++) {
+            let x = this.radius * Math.cos(i * angleStep);
+            let y = this.radius * Math.sin(i * angleStep);
+            points.push({ x, y });
+            if (i === 0) g.moveTo(x, y);
+            else g.lineTo(x, y);
+          }
+          g.closePath();
+          if (this.fillColor) g.fill();
+          if (this.strokeColor) g.stroke();
+
+          g.strokeStyle = "black";
+          g.lineWidth = 1;
+          for (let point of points) {
+            g.beginPath();
+            g.moveTo(0, 0);
+            g.lineTo(point.x, point.y);
+            g.stroke();
+          }
+
+          g.restore();
+        }
+      }
+
+      class TriangleNode extends SceneGraphNode {
+        constructor(size) {
+          super();
+          this.size = size;
+        }
+
+        doDraw(g) {
+          g.beginPath();
+          g.moveTo(0, -this.size / 2);
+          g.lineTo(-this.size / 2, this.size / 2);
+          g.lineTo(this.size / 2, this.size / 2);
+          g.closePath();
+          if (this.fillColor) g.fill();
+          if (this.strokeColor) g.stroke();
+        }
+      }
+
+      class LineNode extends SceneGraphNode {
+        constructor(length) {
+          super();
+          this.length = length;
+        }
+
+        doDraw(g) {
+          g.beginPath();
+          g.moveTo(-this.length / 2, 0);
+          g.lineTo(this.length / 2, 0);
+          g.stroke();
+        }
+      }
+
+      class Trujkotipochylnia extends CompoundObject {
+        constructor(triangleSize, lineLength, polygonRadius) {
+          super();
+
+          let triangle = new TriangleNode(triangleSize).setColor("red");
+          let line = new LineNode(lineLength).setStrokeColor("black");
+
+          this.polygon1 = new PolygonNode(13, polygonRadius).setStrokeColor(
+            "gray"
+          );
+          this.polygon2 = new PolygonNode(13, polygonRadius).setStrokeColor(
+            "gray"
+          );
+
+          this.polygon1Transform = new TransformedObject(
+            this.polygon1
+          ).setTranslation(-lineLength / 2, -125);
+          this.polygon2Transform = new TransformedObject(
+            this.polygon2
+          ).setTranslation(lineLength / 2, -75);
+
+          this.add(
+            new TransformedObject(triangle).setTranslation(0, -triangleSize / 2)
+          );
+          this.add(
+            new TransformedObject(line).setRotation(15).setTranslation(0, -100)
+          );
+          this.add(this.polygon1Transform);
+          this.add(this.polygon2Transform);
+        }
+
+        updateRotation(angle) {
+          this.rotationAngle = angle;
+          this.polygon1Transform.setRotation(angle);
+          this.polygon2Transform.setRotation(angle);
+        }
+      }
+
+      let canvas = document.getElementById("thecanvas");
+      let graphics = canvas.getContext("2d");
+      let world;
+
+      let running = false;
+      let frameNumber = 0;
+
+      let figury = [];
+
+      function createWorld() {
+        world = new CompoundObject();
+
+        let figura1 = new Trujkotipochylnia(100, 200, 40);
+        world.add(new TransformedObject(figura1).setTranslation(650, 250));
+        figury.push(figura1);
+
+        let figura2 = new Trujkotipochylnia(100, 200, 40);
+        world.add(new TransformedObject(figura2).setTranslation(300, 350));
+        figury.push(figura2);
+
+        let figura3 = new Trujkotipochylnia(100, 200, 40);
+        world.add(new TransformedObject(figura3).setTranslation(1000, 350));
+        figury.push(figura3);
+
+        drawScene();
+      }
+
+      function drawScene() {
+        graphics.clearRect(0, 0, canvas.width, canvas.height);
+        graphics.save();
+        world.draw(graphics);
+        graphics.restore();
+      }
+
+      function frame() {
+    if (running) {
+        frameNumber += 1;
+        
+        
+        for (let figura of figury) {
+            figura.updateRotation(frameNumber * 2);
+        }
+
+        drawScene();
+        requestAnimationFrame(frame);
+    }
+}
+
+
+      document
+        .getElementById("animateCheck")
+        .addEventListener("change", function () {
+          running = this.checked;
+          if (running) frame();
+        });
+
+      window.onload = createWorld;
+    </script>
+  </body>
+</html>

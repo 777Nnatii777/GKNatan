@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <title>Hierarchia strona animacji</title>
+</head>
+<body>
+    <canvas id="thecanvas" width="1300" height="600"></canvas>
+
+    <p>
+        <label><input type="checkbox" id="animateCheck" /> Obracaj 13-kąty</label>
+    </p>
+
+    <script>
+        var canvas = document.getElementById("thecanvas");
+        var graphics = canvas.getContext("2d");
+
+        var katObrotu = 0;
+        var animacjaAktywna = false;
+
+        function t1(X, Y) {
+            graphics.beginPath();
+            graphics.moveTo(X, Y + 200);
+            graphics.lineTo(X + 200, Y + 200);
+            graphics.lineTo(X + 100, Y);
+            graphics.closePath();
+
+            graphics.fillStyle = "red";
+            graphics.fill();
+        }
+
+        function l1(X, Y) {
+            graphics.beginPath();
+            graphics.moveTo(X - 40, Y - 50);
+            graphics.lineTo(X + 260, Y + 40);
+            graphics.lineTo(X + 250, Y + 50);
+            graphics.lineTo(X - 50, Y + -40);
+            graphics.closePath();
+
+            graphics.fillStyle = "black";
+            graphics.fill();
+        }
+
+        function rysujTrzynastokat(X, Y) {
+            var centerX = X;
+            var centerY = Y;
+            var radius = 50;
+            var katKroku = (2 * Math.PI) / 13;
+
+            graphics.save();
+            graphics.translate(centerX, centerY);
+            graphics.rotate((katObrotu * Math.PI) / 180);
+            graphics.translate(-centerX, -centerY);
+
+            graphics.beginPath();
+            for (let i = 0; i < 13; i++) {
+                let x = centerX + radius * Math.cos(i * katKroku);
+                let y = centerY + radius * Math.sin(i * katKroku);
+
+                if (i === 0) {
+                    graphics.moveTo(x, y);
+                } else {
+                    graphics.lineTo(x, y);
+                }
+            }
+            graphics.closePath();
+            graphics.strokeStyle = "grey";
+            graphics.lineWidth = 4;
+            graphics.stroke();
+        
+            
+            for (let i = 0; i < 13; i++) {
+                let x = centerX + radius * Math.cos(i * katKroku);
+                let y = centerY + radius * Math.sin(i * katKroku);
+
+                graphics.beginPath();
+                graphics.moveTo(centerX, centerY);
+                graphics.lineTo(x, y);
+                graphics.strokeStyle = "black";
+                graphics.stroke();
+            }
+
+            graphics.restore();
+        }
+
+        function updateFrame() {
+            if (animacjaAktywna) {
+                katObrotu += 1;
+                rysujScene();  
+                requestAnimationFrame(updateFrame);
+            }
+        }
+
+        function toggleAnimation() {
+            animacjaAktywna = document.getElementById("animateCheck").checked;
+            if (animacjaAktywna) {
+                updateFrame();
+            }
+        }
+
+        document.getElementById("animateCheck").addEventListener("change", toggleAnimation);
+
+        function narysujPelnaFigure(X, Y) {
+            t1(X, Y);  
+            l1(X, Y);  
+            rysujTrzynastokat(X - 40 , Y - 45); 
+            rysujTrzynastokat(X + 255, Y + 45); 
+        }
+
+        function rysujScene() {
+            graphics.clearRect(0, 0, canvas.width, canvas.height); 
+            narysujPelnaFigure(100, 300); 
+            narysujPelnaFigure(900, 300); 
+            narysujPelnaFigure(500, 100); 
+        }
+
+        rysujScene(); 
+    </script>
+</body>
+</html>
