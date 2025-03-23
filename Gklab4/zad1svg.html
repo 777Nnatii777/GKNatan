@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <title>13-kąty z dużym trójkątem i dłuższą deską</title>
+  <style>
+    body {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <svg width="700" height="600" viewBox="0 0 700 600">
+    
+ 
+    <line x1="150" y1="250" x2="550" y2="300" stroke="black" stroke-width="16" stroke-linecap="round" />
+
+    
+    <polygon id="trojkat" fill="red" stroke="black" stroke-width="3" />
+
+    
+    <g id="g1">
+      <polygon id="poly1" fill="lightblue" stroke="black" stroke-width="2" />
+      <animateTransform 
+        attributeName="transform"
+        type="rotate"
+        from="0 150 250"
+        to="360 150 250"
+        dur="10s"
+        repeatCount="indefinite" />
+    </g>
+ 
+    <g id="g2">
+      <polygon id="poly2" fill="lightgreen" stroke="black" stroke-width="2" />
+      <animateTransform 
+        attributeName="transform"
+        type="rotate"
+        from="0 550 300"
+        to="360 550 300"
+        dur="7s"
+        repeatCount="indefinite" />
+    </g>
+
+
+    <script>
+      function createPolygonPoints(sides, radius, centerX, centerY) {
+        const points = [];
+        for (let i = 0; i < sides; i++) {
+          const angle = (2 * Math.PI * i) / sides - Math.PI / 2;
+          const x = centerX + radius * Math.cos(angle);
+          const y = centerY + radius * Math.sin(angle);
+          points.push(`${x},${y}`);
+        }
+        return points.join(" ");
+      }
+
+     
+      document.getElementById("poly1").setAttribute("points", createPolygonPoints(13, 80, 150, 250));
+      document.getElementById("poly2").setAttribute("points", createPolygonPoints(13, 80, 550, 300));
+
+      
+      const x1 = 150, y1 = 250;
+      const x2 = 550, y2 = 300;
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+
+      const size = 150; 
+
+     
+      const trianglePoints = [
+        [cx, cy], 
+        [cx - size, cy + size * 1.5],
+        [cx + size, cy + size * 1.5]
+      ].map(p => p.join(',')).join(' ');
+
+      document.getElementById("trojkat").setAttribute("points", trianglePoints);
+    </script>
+  </svg>
+</body>
+</html>
