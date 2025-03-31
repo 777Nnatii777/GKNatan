@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Obiekty OpenGL: Kostka, Spirala i Piramida</title>
+<script src="glsim.js"></script>
+<script>
+    
+    let rotateX = 15, rotateY = -15, rotateZ = 0;
+
+
+    let objectNumber = 1; 
+
+
+
+function init() {
+    
+        glsimUse("canvas"); 
+   
+    document.onkeydown = doKeyDown;
+    initGL();
+    display();
+}
+
+
+function initGL() {
+    glMatrixMode(GL_PROJECTION);
+    glOrtho(-1, 1, -1, 1, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0, 0, 0, 1); 
+}
+
+function doKeyDown(evt) {
+    let key = evt.keyCode;
+    if (key == 37) rotateY -= 15;       
+    else if (key == 39) rotateY += 15; 
+    else if (key == 38) rotateX -= 15;  
+    else if (key == 40) rotateX += 15;  
+    
+    if(key == 49)
+    objectNumber = 1; 
+else if (key == 50) 
+    objectNumber = 2;
+else if (key == 51) 
+    objectNumber = 3;
+    
+    display();
+}
+
+
+
+function square(r, g, b) {
+        glColor3f(r,g,b);
+        glBegin(GL_TRIANGLE_FAN);
+        glVertex3f(-0.5, -0.5, 0.5);
+        glVertex3f(0.5, -0.5, 0.5);
+        glVertex3f(0.5, 0.5, 0.5);
+        glVertex3f(-0.5, 0.5, 0.5);
+        glEnd();
+    }
+    
+    function stozek(size) {
+    glPushMatrix();
+    glScalef(size, size, size); 
+
+    const baza = [];
+    const radius = 0.5;
+
+    
+    for (let i = 0; i < 13; i++) {
+        let angle = i * 2 * Math.PI / 13;
+        baza.push([radius * Math.cos(angle), -0.5, radius * Math.sin(angle)]);
+    }
+
+   
+    glColor3f(0.5, 0.5, 0.5); 
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(0, -0.5, 0); 
+    for (let i = 0; i <= baza.length; i++) {
+        let v = baza[i % baza.length];
+        glVertex3f(v[0], v[1], v[2]);
+    }
+    glEnd();
+
+    
+    let wierzcholek = [0, 0.5, 0]; 
+
+    for (let i = 0; i < baza.length; i++) {
+        let v1 = baza[i];
+        let v2 = baza[(i + 1) % baza.length];
+
+        glBegin(GL_TRIANGLES);
+        glColor3f(i / 13, 1 - i / 13, (i % 3) / 2); 
+        glVertex3f(...v1);
+        glVertex3f(...v2);
+        glVertex3f(...wierzcholek);
+        glEnd();
+    }
+
+    glPopMatrix();
+}
+
+function spirala(size) {
+    glPushMatrix();
+    glScalef(size, size, size);
+
+    const steps = 200;
+    const obroty = 13;
+    const height = 1.5;
+    const radius = 0.4;
+
+    glBegin(GL_LINE_STRIP); 
+
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const angle = 2 * Math.PI * obroty * t;
+        const x = radius * Math.cos(angle);
+        const y = -0.75 + height * t;
+        const z = radius * Math.sin(angle);
+
+        
+        let r = Math.min(1, Math.max(0, 4 * t - 2));
+        let g = Math.min(1, Math.max(0, 4 * (1 - Math.abs(t - 0.5))));
+        let b = Math.min(1, Math.max(0, 2 - 4 * t));
+
+        glColor3f(r, g, b);
+        glVertex3f(x, y, z);
+    }
+
+    glEnd();
+    glPopMatrix();
+}
+
+
+
+
+function cube(size) {
+    glPushMatrix();
+    glScalef(size, size, size);
+
+    square(1, 0, 0); 
+
+    glPushMatrix();
+    glRotatef(90, 0, 1, 0);
+    square(0, 1, 0);
+    glPopMatrix();
+
+    glPushMatrix();
+    glRotatef(-90, 1, 0, 0);
+    square(0, 0, 1); 
+    glPopMatrix();
+
+    glPushMatrix();
+    glRotatef(180, 0, 1, 0);
+    square(0, 1, 1); 
+    glPopMatrix();
+
+    glPushMatrix();
+    glRotatef(-90, 0, 1, 0);
+    square(1, 0, 1); 
+    glPopMatrix();
+
+    glPushMatrix();
+    glRotatef(90, 1, 0, 0);
+    square(1, 1, 0); 
+    glPopMatrix();
+
+    glPopMatrix(); 
+}
+
+
+function display() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+
+ 
+    glRotatef(rotateZ, 0, 0, 1);
+    glRotatef(rotateY, 0, 1, 0);
+    glRotatef(rotateX, 1, 0, 0);
+
+    
+    if (objectNumber === 1) {
+        cube(1); 
+
+    }
+    else if (objectNumber === 2) {
+       spirala(1);
+       
+    }
+    else if (objectNumber === 3)
+    {
+        stozek(1);
+
+    }
+}
+
+
+</script>
+</head>
+<body onload="init()">
+    <h3>Kostka, Spirala i Piramida w OpenGL (WebGL symulacja)</h3>
+    <p>
+        Klawisze: <br>
+        Strzałki — obrót<br>
+        1 — kostka<br>
+        2 - spirala<br>
+        3— piramida (13-bokowa podstwa)
+    </p>
+    <div id="canvas-holder">
+        <canvas id="canvas" width="500" height="500"></canvas>
+    </div>
+</body>
+</html>
