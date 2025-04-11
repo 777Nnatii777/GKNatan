@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Four Lights – Stozek with Moving Yellow Ball</title>
+<link rel="stylesheet" href="../demo.css">
+<script src="../script/demo-core.js"></script>
+<script src="../script/glsim.js"></script>
+<script>
+
+var camera;
+var animate, drawBase, ambientLight;
+var viewpointLight, redLight, blueLight, greenLight;
+var animating = false;
+var frameNumber = 0;
+
+var stozekModel;
+
+function uvStozek(radius, height, slices) {
+    const vertexPositions = [];
+    const vertexNormals = [];
+    const indices = [];
+
+    vertexPositions.push(0, height / 2, 0);
+    vertexNormals.push(0, 1, 0);
+
+    for (let i = 0; i < slices; i++) {
+        const angle = (2 * Math.PI * i) / slices;
+        const x = radius * Math.cos(angle);
+        const z = radius * Math.sin(angle);
+        vertexPositions.push(x, -height / 2, z);
+        const nx = x;
+        const ny = radius;
+        const nz = z;
+        const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        vertexNormals.push(nx / len, ny / len, nz / len);
+    }
+
+    for (let i = 1; i <= slices; i++) {
+        const next = i < slices ? i + 1 : 1;
+        indices.push(0, i, next);
+    }
+
+    const baseCenterIndex = vertexPositions.length / 3;
+    vertexPositions.push(0, -height / 2, 0);
+    vertexNormals.push(0, -1, 0);
+
+    for (let i = 1; i <= slices; i++) {
+        const next = i < slices ? i + 1 : 1;
+        indices.push(baseCenterIndex, next, i);
+    }
+
+    return {
+        vertexPositions: new Float32Array(vertexPositions),
+        vertexNormals: new Float32Array(vertexNormals),
+        indices: new Uint8Array(indices)
+    };
+}
+
+function uvSphere(radius, slices, stacks) {
+    for (let j = 0; j < stacks; j++) {
+        const lat1 = (Math.PI / stacks) * j - Math.PI / 2;
+        const lat2 = (Math.PI / stacks) * (j + 1) - Math.PI / 2;
+        const sinLat1 = Math.sin(lat1), cosLat1 = Math.cos(lat1);
+        const sinLat2 = Math.sin(lat2), cosLat2 = Math.cos(lat2);
+        glBegin(GL_TRIANGLE_STRIP);
+        for (let i = 0; i <= slices; i++) {
+            const lon = (2 * Math.PI / slices) * i;
+            const sinLon = Math.sin(lon), cosLon = Math.cos(lon);
+            const x1 = cosLon * cosLat1, y1 = sinLon * cosLat1, z1 = sinLat1;
+            const x2 = cosLon * cosLat2, y2 = sinLon * cosLat2, z2 = sinLat2;
+            glNormal3d(x2, y2, z2);
+            glVertex3d(radius * x2, radius * y2, radius * z2);
+            glNormal3d(x1, y1, z1);
+            glVertex3d(radius * x1, radius * y1, radius * z1);
+        }
+        glEnd();
+    }
+}
+
+function lights() {
+    const zero = [0, 0, 0, 1];
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, zero);
+
+    if (viewpointLight.checked) glEnable(GL_LIGHT0); else glDisable(GL_LIGHT0);
+
+    if (redLight.checked) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.5, 0, 0, 1]);
+        glEnable(GL_LIGHT1);
+    } else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
+        glDisable(GL_LIGHT1);
+    }
+    glPushMatrix();
+    glRotated(-frameNumber, 0, 1, 0);
+    glTranslated(10, 7, 0);
+    glLightfv(GL_LIGHT1, GL_POSITION, zero);
+    uvSphere(0.5, 16, 8);
+    glPopMatrix();
+
+    if (greenLight.checked) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0, 0.5, 0, 1]);
+        glEnable(GL_LIGHT2);
+    } else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
+        glDisable(GL_LIGHT2);
+    }
+    glPushMatrix();
+    glRotated((frameNumber + 100) * 0.8743, 0, 1, 0);
+    glTranslated(9, 8, 0);
+    glLightfv(GL_LIGHT2, GL_POSITION, zero);
+    uvSphere(0.5, 16, 8);
+    glPopMatrix();
+
+    if (blueLight.checked) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0, 0, 0.5, 1]);
+        glEnable(GL_LIGHT3);
+    } else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
+        glDisable(GL_LIGHT3);
+    }
+    glPushMatrix();
+    glRotated((frameNumber - 100) * 1.3057, 0, 1, 0);
+    glTranslated(9.5, 7.5, 0);
+    glLightfv(GL_LIGHT3, GL_POSITION, zero);
+    uvSphere(0.5, 16, 8);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
+}
+
+function display() {
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    camera.apply();
+    lights();
+
+    if (ambientLight.checked)
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.15, 0.15, 0.15, 1]);
+    else
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0, 0, 0, 1]);
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.2, 0.2, 0.2, 1]);
+
+  
+    glColor3f(0.8, 0.8, 0.8);
+    glPushMatrix();
+    glTranslatef(0, 0.68, 0);
+    glScalef(4, 4, 4); 
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, stozekModel.vertexPositions);
+    glNormalPointer(GL_FLOAT, 0, stozekModel.vertexNormals);
+    glDrawElements(GL_TRIANGLES, stozekModel.indices.length, GL_UNSIGNED_BYTE, stozekModel.indices);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glPopMatrix();
+
+   
+    glPushMatrix();
+    glTranslatef(4 * Math.cos(frameNumber * 0.02), 1.5, 4 * Math.sin(frameNumber * 0.02)); 
+    glColor3f(1.0, 1.0, 0.0); 
+    uvSphere(0.3, 16, 8); 
+    glPopMatrix();
+}
+
+function initGL() {
+    glClearColor(0, 0, 0, 1);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_NORMALIZE);
+    glEnable(GL_COLOR_MATERIAL);
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
+    glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, 32);
+
+    var dim = [0.5, 0.5, 0.5, 1];
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, dim);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, dim);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, [0.5, 0, 0, 1]);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, [0, 0.5, 0, 1]);
+    glLightfv(GL_LIGHT3, GL_DIFFUSE, [0, 0, 0.5, 1]);
+}
+
+function doFrame() {
+    if (animating) {
+        frameNumber++;
+        display();
+        setTimeout(doFrame, 30);
+    }
+}
+
+function init() {
+    try {
+        glsimUse("maincanvas");
+    } catch (e) {
+        document.getElementById("canvas-holder").innerHTML = "<p><b>Error:<br>" + e + "</b></p>";
+        return;
+    }
+    animate = document.getElementById("animate");
+    drawBase = document.getElementById("drawBase");
+    ambientLight = document.getElementById("ambientLight");
+    viewpointLight = document.getElementById("viewpointLight");
+    redLight = document.getElementById("redLight");
+    greenLight = document.getElementById("greenLight");
+    blueLight = document.getElementById("blueLight");
+
+    animate.onchange = () => {
+        animating = animate.checked;
+        if (animating) doFrame();
+    };
+    [drawBase, ambientLight, viewpointLight, redLight, greenLight, blueLight].forEach(cb => {
+        cb.onchange = display;
+    });
+
+    initGL();
+    stozekModel = uvStozek(0.5, 1.2, 13);
+    camera = new Camera();
+    camera.lookAt(5, 10, 30, 0, 0, 0, 0, 1, 0);
+    camera.setScale(15);
+    camera.installTrackball(display);
+    display();
+}
+
+</script>
+</head>
+<body onload="init()">
+<h3>Stozek z 13 kątów – oświetlenie z kulką</h3>
+<div id="canvas-holder">
+<canvas id="maincanvas" width="500" height="500"></canvas>
+</div>
+<div id="tools">
+<p>
+<label><input type="checkbox" id="animate">Animate</label><br>
+<label><input type="checkbox" id="drawBase">Draw Base</label><br>
+<label><input type="checkbox" id="ambientLight">Global Ambient</label><br>
+<label><input type="checkbox" id="viewpointLight" checked>Viewpoint Light</label><br>
+<label><input type="checkbox" id="redLight" checked>Red Light</label><br>
+<label><input type="checkbox" id="greenLight" checked>Green Light</label><br>
+<label><input type="checkbox" id="blueLight" checked>Blue Light</label><br>
+</p>
+</div>
+</body>
+</html>
