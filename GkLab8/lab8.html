@@ -16,28 +16,28 @@
  
       "use strict";
       var pivots = [];
+      var merryGoRound;
+      var horses = []; 
 
-      var canvas, renderer, scene, camera; // Standard three.js requirements.
+      var canvas, renderer, scene, camera; 
 	  var kon1,kon2,kon3,kon4,kon5,kon6;
       var slup1,slup2,slup3,slup4,slup5,slup6;
       var dach1,dach2;
-      var controls;  // An OrbitControls object that is used to implement
-                     // rotation of the scene using the mouse.  (It actually rotates
-                     // the camera around the scene.)
-      var animating = false;  // Set to true when an animation is in progress.
-      var frameNumber = 0;  // Frame number is advanced by 1 for each frame while animating.
+      var controls;  
+                  
+      var animating = false;  
+      var frameNumber = 0;  
       var tempObject;
       function render() {
          renderer.render(scene, camera);
       }
  
-      /**
-       * This function is called by the init() method to create the world.
-       */
+     
        function createWorld() {
    renderer.setClearColor("gray");
    scene = new THREE.Scene();
-
+   merryGoRound = new THREE.Group();
+   scene.add(merryGoRound);
    camera = new THREE.PerspectiveCamera(30, canvas.width / canvas.height, 0.1, 100);
    camera.position.z = 50;
 
@@ -49,7 +49,7 @@
    var textureGround = new THREE.TextureLoader().load("paisley.jpg");
 
    tempObject = new THREE.Mesh(
-   new THREE.CylinderGeometry(13, 13, 0.4, 13), // <-- 13 boków!
+   new THREE.CylinderGeometry(13, 13, 0.4, 13), 
    new THREE.MeshBasicMaterial({
       color: "white",
       map: textureGround,
@@ -57,7 +57,8 @@
 );
 
    tempObject.rotation.y = Math.PI / 8;
-   scene.add(tempObject);
+   merryGoRound.add(tempObject);
+
 
    var texture = new THREE.TextureLoader().load("earth.jpg");
    var sphere = new THREE.Mesh(
@@ -65,13 +66,14 @@
       new THREE.MeshBasicMaterial({ color: 0xffffff, map: texture })
    );
    sphere.position.y = 4;
-   scene.add(sphere);
+   merryGoRound.add(sphere);
 
-   const count = 13; // <- liczba koni / słupków
+
+   const count = 13;
 const radius = 10;
 const angleStep = (2 * Math.PI) / count;
 const loader = new THREE.LegacyJSONLoader();
-const colors = [0x006400, 0xffffff, 0x964B00]; // rotacja kolorów
+const colors = [0x006400, 0xffffff, 0x964B00];
 
 for (let i = 0; i < count; i++) {
    let angle = i * angleStep;
@@ -81,7 +83,7 @@ for (let i = 0; i < count; i++) {
    let pivot = new THREE.Group();
    pivot.position.set(x, 0, z);
 
-   // słupek
+  
    let slup = new THREE.Mesh(
       new THREE.CylinderGeometry(0.3, 0.3, 8, 30, 1),
       new THREE.MeshPhongMaterial({
@@ -94,28 +96,33 @@ for (let i = 0; i < count; i++) {
    slup.position.y = 4;
    pivot.add(slup);
 
-   // koń
-   loader.load('resources/horse.js', function (geometry) {
-      let kon = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({
-         color: colors[i % colors.length],
-         specular: 0x222222,
-         shininess: 12,
-         flatShading: true
-      }));
-      kon.scale.set(0.03, 0.03, 0.03);
-      kon.position.y = 0;
-      kon.rotation.y = -angle + Math.PI / 2; // koń patrzy na zewnątrz
-      pivot.add(kon);
-   });
+   
+   merryGoRound.add(pivot);
+ 
 
-   scene.add(pivot);
-   pivots.push(pivot);
+   pivots.push(pivot); 
+
+ 
+   loader.load('resources/horse.js', function (geometry) {
+    let horseGroup = new THREE.Group(); 
+
+    let kon = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({
+        color: colors[i % colors.length],
+        specular: 0x222222,
+        shininess: 12,
+        flatShading: true
+    }));
+    kon.scale.set(0.03, 0.03, 0.03);
+    kon.rotation.y = Math.PI / 2; 
+    horseGroup.add(kon);
+    horses.push(kon);
+
+    horseGroup.rotation.y = -angle; 
+    pivot.add(horseGroup);
+   });
 }
 
 
- 
-
-   // dachy
    dach1 = new THREE.Mesh(
       new THREE.CylinderGeometry(0.1, 12, 3, 30, 1),
       new THREE.MeshPhongMaterial({
@@ -138,27 +145,27 @@ for (let i = 0; i < count; i++) {
    );
    dach2.position.y = 8;
 
-   scene.add(dach1);
-   scene.add(dach2);
+   merryGoRound.add(dach1);
+merryGoRound.add(dach2);
+
 }
 
  
-      /**
-       *  This function is called once for each frame of the animation, before
-       *  the render() function is called for that frame.  It updates any
-       *  animated properties.  The value of the global variable frameNumber
-       *  is incrementd 1 before this function is called.
-       */
+    
       function updateForFrame() {
-         pivots.forEach(pivot => {
-   pivot.rotation.y += 0.01;
-});
+         merryGoRound.rotation.y += 0.01;
+
+         horses.forEach(horse => {
+        horse.rotation.y += 0.05; 
+    });
+
+};
 
 tempObject.rotation.y += 0.01;
 dach1.rotation.y += 0.01;
 
  
-      }
+      
  
  
       /* ---------------------------- MOUSE AND ANIMATION SUPPORT ------------------
@@ -199,7 +206,7 @@ dach1.rotation.y += 0.01;
          canvas.addEventListener("touchmove", touch, false);
       }
  
-      /*  Called when user changes setting of the Animate checkbox. */
+    
       function doAnimateCheckbox() {
          var run = document.getElementById("animateCheckbox").checked;
          if (run != animating) {
@@ -210,7 +217,7 @@ dach1.rotation.y += 0.01;
          }
       }
  
-      /*  Drives the animation, called by system through requestAnimationFrame() */
+
       function doFrame() {
          if (animating) {
             frameNumber++;
